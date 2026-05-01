@@ -12,7 +12,7 @@ export function validate<T extends z.ZodSchema>(
     } catch (error) {
       if (error instanceof z.ZodError) {
         const fields: Record<string, string> = {};
-        error.errors.forEach((err) => {
+        (error as any).errors.forEach((err: any) => {
           const path = err.path.join('.');
           fields[path] = err.message;
         });

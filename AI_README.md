@@ -29,5 +29,6 @@ This is a modern, full-stack expense tracking application built using a monorepo
 - [x] **BATCH 5 — Frontend: Add Expense Form**: Created a highly robust `ExpenseForm` with Zod validation, precise Shadcn inputs (including dynamic category fetching), explicit submission state handling, inline API error display, and optimistic cache invalidation.
 - [x] **BATCH 6 — Frontend: Expense List, Filters & Total**: Built the read-side UI featuring a responsive Shadcn Table, Indian currency formatting, elegant skeleton loaders, and purely server-side filter state management dynamically driven by React Query.
 - [x] **BATCH 9 — Production Hardening**: Installed and configured `express-rate-limit`, restricted JSON body size to 16kb, applied strict recursive string normalization to prevent database noise, and securely trapped global stack traces from leaking to clients.
+- [x] **BATCH 10 — Vercel Deployment**: Stitched the monorepo into a unified `vercel.json` config, allowing React and Express to share a single domain (eliminating CORS). Automated Neon database migrations inside the Vercel build pipeline and wrapped Express natively into Vercel Serverless Functions.
 
 I am ready to proceed with your instructions.
