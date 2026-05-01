@@ -14,7 +14,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "dev": "npm run --workspaces --parallel dev",
-    "build": "npm run build --workspace=client && npm run build --workspace=server",
+    "build": "npm run migrate --workspace=server && npm run build --workspace=client && npm run build --workspace=server",
     "migrate": "npm run migrate --workspace=server"
   },
   "devDependencies": {
