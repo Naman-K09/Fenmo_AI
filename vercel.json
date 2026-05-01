@@ -16,6 +16,10 @@
   ],
   "rewrites": [
     {
+      "source": "/health",
+      "destination": "/server/src/index.ts"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/server/src/index.ts"
     },
