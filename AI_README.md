@@ -22,4 +22,8 @@ This is a modern, full-stack expense tracking application built using a monorepo
 - Error handling is managed by a centralized middleware checking for `AppError` instances.
 - The UI currently has a basic skeleton in `App.tsx` using Tailwind classes for styling.
 
+## Progress Tracking
+- [x] **BATCH 3 — Backend: POST /expenses (Idempotent Create)**: Verified the implementation in `server/src/routes/expenses.ts`. Validations, Idempotency-Key header handling, Category existence checks, and response shapes correctly match the requirements without changing any pre-existing variables.
+- [x] **BATCH 4 — Frontend: Project Setup & API Layer**: Configured Shadcn UI, set up absolute imports, centralized API interactions with exponential backoff logic, added an idempotency hook, and configured global React Query setup.
+
 I am ready to proceed with your instructions.

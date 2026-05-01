@@ -8,7 +8,8 @@ export const App: React.FC<AppProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white shadow">
-        <div className="mx-auto max-w-4xl px-4 py-6">
+        <div className="mx-auto max-w-4xl px-4 py-6 flex items-center gap-3">
+          <img src="/favicon.png" alt="Expense Tracker Logo" className="w-10 h-10 rounded shadow-sm" />
           <h1 className="text-3xl font-bold text-slate-900">Expense Tracker</h1>
         </div>
       </header>
