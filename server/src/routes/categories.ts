@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { queryMany } from '../db.js';
 import { validate } from '../middleware.js';
 import { AppError, ErrorCodes } from '../errors.js';
+import { normalizeBody } from '../utils/normalize.js';
 
 // Types (temporarily inline until types package is built)
 interface Category {
@@ -44,8 +46,14 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+const categoriesPostLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  message: { error: 'Too many requests, please try again later.', code: 'RATE_LIMIT_EXCEEDED' },
+});
+
 // POST /categories - Create a new category
-router.post('/', validate(createCategorySchema), async (req: Request, res: Response) => {
+router.post('/', categoriesPostLimiter, normalizeBody, validate(createCategorySchema), async (req: Request, res: Response) => {
   try {
     const { name } = req.body as CreateCategoryBody;
     const normalizedName = normalizeCategoryName(name);

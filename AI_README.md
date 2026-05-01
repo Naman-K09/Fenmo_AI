@@ -28,5 +28,6 @@ This is a modern, full-stack expense tracking application built using a monorepo
 - [x] **BATCH 4 — Backend: GET /expenses (Filtered & Sorted)**: Verified the dynamic query builder, server-computed totals using window functions, and relocated the database health check endpoint to the server root for Vercel/AWS compatibility.
 - [x] **BATCH 5 — Frontend: Add Expense Form**: Created a highly robust `ExpenseForm` with Zod validation, precise Shadcn inputs (including dynamic category fetching), explicit submission state handling, inline API error display, and optimistic cache invalidation.
 - [x] **BATCH 6 — Frontend: Expense List, Filters & Total**: Built the read-side UI featuring a responsive Shadcn Table, Indian currency formatting, elegant skeleton loaders, and purely server-side filter state management dynamically driven by React Query.
+- [x] **BATCH 9 — Production Hardening**: Installed and configured `express-rate-limit`, restricted JSON body size to 16kb, applied strict recursive string normalization to prevent database noise, and securely trapped global stack traces from leaking to clients.
 
 I am ready to proceed with your instructions.

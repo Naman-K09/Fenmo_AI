@@ -1,8 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { queryMany, queryOne } from '../db.js';
 import { validate } from '../middleware.js';
 import { AppError, ErrorCodes } from '../errors.js';
+import { normalizeBody } from '../utils/normalize.js';
 
 // Types
 interface Category {
@@ -89,8 +91,14 @@ function requireIdempotencyKey(
   next();
 }
 
+const expensesGetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200,
+  message: { error: 'Too many requests, please try again later.', code: 'RATE_LIMIT_EXCEEDED' },
+});
+
 // GET /expenses - Get all expenses with filtering and sorting
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', expensesGetLimiter, async (req: Request, res: Response) => {
   try {
     // Parse and validate query parameters
     let params: z.infer<typeof getExpensesQuerySchema>;
@@ -184,9 +192,17 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
+const expensesPostLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60,
+  message: { error: 'Too many requests, please try again later.', code: 'RATE_LIMIT_EXCEEDED' },
+});
+
 // POST /expenses - Create a new expense (idempotent)
 router.post(
   '/',
+  expensesPostLimiter,
+  normalizeBody,
   requireIdempotencyKey,
   validate(createExpenseSchema),
   async (req: Request, res: Response) => {

@@ -13,7 +13,7 @@ const NODE_ENV = process.env.NODE_ENV ?? 'development';
 app.use(cors({
   origin: process.env.CLIENT_URL ?? 'http://localhost:5173',
 }));
-app.use(express.json());
+app.use(express.json({ limit: '16kb' }));
 
 // Routes
 app.use('/api/categories', categoriesRouter);
@@ -46,10 +46,13 @@ app.use((error: Error, req: express.Request, res: express.Response, next: expres
     return;
   }
 
-  // Handle unexpected errors
-  console.error('Unexpected error:', error);
+  // Handle unexpected errors by logging the full stack trace internally
+  console.error(`[UNHANDLED ERROR] ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  console.error(error.stack || error);
+
+  // Return a generic error to the client, never leaking stack traces
   res.status(500).json({
-    error: 'Internal server error',
+    error: 'An unexpected error occurred',
     code: 'INTERNAL_ERROR',
   });
 });
