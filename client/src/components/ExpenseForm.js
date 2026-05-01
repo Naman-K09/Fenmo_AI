@@ -10,7 +10,6 @@ import { useIdempotentSubmit } from '../hooks/useIdempotentSubmit';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from './ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from './ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 // Schema mimicking backend validation exactly
 const expenseFormSchema = z.object({
@@ -18,7 +17,7 @@ const expenseFormSchema = z.object({
         .string()
         .min(1, 'Amount is required')
         .regex(/^\d+(\.\d{1,2})?$/, 'Must be a positive number with at most 2 decimal places'),
-    categoryId: z.string().uuid('Please select a valid category'),
+    categoryName: z.string().min(1, 'Category is required').max(50, 'Category name is too long'),
     description: z
         .string()
         .min(1, 'Description is required')
@@ -42,7 +41,7 @@ export function ExpenseForm() {
         resolver: zodResolver(expenseFormSchema),
         defaultValues: {
             amount: '',
-            categoryId: '',
+            categoryName: '',
             description: '',
             date: today,
         },
@@ -50,12 +49,46 @@ export function ExpenseForm() {
     const mutation = useMutation({
         mutationFn: async (values) => {
             setSubmitError(null);
+            let finalCategoryId = '';
+            const normalizedInput = values.categoryName.trim().toLowerCase();
+            const existing = categories.find((c) => c.name.toLowerCase() === normalizedInput);
+            if (existing) {
+                finalCategoryId = existing.id;
+            }
+            else {
+                try {
+                    const createRes = await api.post('/categories', { name: values.categoryName });
+                    finalCategoryId = createRes.data.id;
+                }
+                catch (err) {
+                    if (err instanceof ClientApiError && err.status === 409) {
+                        // It was created just now by someone else, refetch to get the ID
+                        const freshCategories = await api.get('/categories');
+                        const found = freshCategories.data.find(c => c.name.toLowerCase() === normalizedInput);
+                        if (found) {
+                            finalCategoryId = found.id;
+                        }
+                        else {
+                            throw new Error("Failed to resolve category ID");
+                        }
+                    }
+                    else {
+                        throw err; // Re-throw if it's a different error
+                    }
+                }
+            }
+            const expensePayload = {
+                amount: values.amount,
+                categoryId: finalCategoryId,
+                description: values.description,
+                date: values.date
+            };
             // We pass the idempotency key to the API call
-            return api.post('/expenses', values, { idempotencyKey: getKey() });
+            return api.post('/expenses', expensePayload, { idempotencyKey: getKey() });
         },
         onSuccess: () => {
             resetKey(); // Important: Only reset after success!
-            form.reset({ amount: '', categoryId: '', description: '', date: today });
+            form.reset({ amount: '', categoryName: '', description: '', date: today });
             setShowSuccess(true);
             setTimeout(() => setShowSuccess(false), 3000);
             // Optimistic feedback: Invalidate to trigger background refetch
@@ -87,6 +120,6 @@ export function ExpenseForm() {
         mutation.mutate(data);
     }
     const isSubmitting = form.formState.isSubmitting || mutation.isPending;
-    return (_jsxs(Card, { className: "w-full max-w-md mx-auto shadow-md", children: [_jsx(CardHeader, { children: _jsx(CardTitle, { className: "text-xl font-bold text-slate-800", children: "Add New Expense" }) }), _jsx(CardContent, { children: _jsx(Form, { ...form, children: _jsxs("form", { onSubmit: form.handleSubmit(onSubmit), className: "space-y-4", children: [_jsx(FormField, { control: form.control, name: "amount", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Amount" }), _jsx(FormControl, { children: _jsxs("div", { className: "relative", children: [_jsx("span", { className: "absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 pointer-events-none select-none", children: "\u20B9" }), _jsx(Input, { placeholder: "0.00", className: "pl-8", ...field })] }) }), _jsx(FormMessage, {})] })) }), _jsx(FormField, { control: form.control, name: "categoryId", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Category" }), _jsxs(Select, { onValueChange: field.onChange, value: field.value, children: [_jsx(FormControl, { children: _jsx(SelectTrigger, { disabled: isLoadingCategories, children: _jsx(SelectValue, { placeholder: isLoadingCategories ? "Loading..." : "Select a category" }) }) }), _jsx(SelectContent, { children: categories.map((category) => (_jsx(SelectItem, { value: category.id, children: category.name }, category.id))) })] }), _jsx(FormMessage, {})] })) }), _jsx(FormField, { control: form.control, name: "description", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Description" }), _jsx(FormControl, { children: _jsx(Input, { placeholder: "What did you spend on?", ...field }) }), _jsx(FormMessage, {})] })) }), _jsx(FormField, { control: form.control, name: "date", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Date" }), _jsx(FormControl, { children: _jsx(Input, { type: "date", max: today, ...field }) }), _jsx(FormMessage, {})] })) }), submitError && (_jsxs("div", { className: "flex items-start gap-2 p-3 text-sm text-red-600 rounded-md bg-red-50 border border-red-100", children: [_jsx(AlertCircle, { className: "w-4 h-4 mt-0.5 shrink-0" }), _jsx("p", { children: submitError })] })), showSuccess && (_jsxs("div", { className: "flex items-center gap-2 p-3 text-sm text-green-700 rounded-md bg-green-50 border border-green-100", children: [_jsx(CheckCircle2, { className: "w-4 h-4 shrink-0" }), _jsx("p", { children: "Expense added successfully!" })] })), _jsx(Button, { type: "submit", className: "w-full", disabled: isSubmitting, children: isSubmitting ? (_jsxs(_Fragment, { children: [_jsx(Loader2, { className: "w-4 h-4 mr-2 animate-spin" }), "Adding..."] })) : ('Add Expense') })] }) }) })] }));
+    return (_jsxs(Card, { className: "w-full max-w-md mx-auto shadow-md", children: [_jsx(CardHeader, { children: _jsx(CardTitle, { className: "text-xl font-bold text-slate-800", children: "Add New Expense" }) }), _jsx(CardContent, { children: _jsx(Form, { ...form, children: _jsxs("form", { onSubmit: form.handleSubmit(onSubmit), className: "space-y-4", children: [_jsx(FormField, { control: form.control, name: "amount", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Amount" }), _jsx(FormControl, { children: _jsxs("div", { className: "relative", children: [_jsx("span", { className: "absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500 pointer-events-none select-none", children: "\u20B9" }), _jsx(Input, { placeholder: "0.00", className: "pl-8", ...field })] }) }), _jsx(FormMessage, {})] })) }), _jsx(FormField, { control: form.control, name: "categoryName", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Category" }), _jsx(FormControl, { children: _jsx(Input, { placeholder: "e.g. Food, Transport, etc.", ...field }) }), _jsx(FormMessage, {})] })) }), _jsx(FormField, { control: form.control, name: "description", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Description" }), _jsx(FormControl, { children: _jsx(Input, { placeholder: "What did you spend on?", ...field }) }), _jsx(FormMessage, {})] })) }), _jsx(FormField, { control: form.control, name: "date", render: ({ field }) => (_jsxs(FormItem, { children: [_jsx(FormLabel, { children: "Date" }), _jsx(FormControl, { children: _jsx(Input, { type: "date", max: today, ...field }) }), _jsx(FormMessage, {})] })) }), submitError && (_jsxs("div", { className: "flex items-start gap-2 p-3 text-sm text-red-600 rounded-md bg-red-50 border border-red-100", children: [_jsx(AlertCircle, { className: "w-4 h-4 mt-0.5 shrink-0" }), _jsx("p", { children: submitError })] })), showSuccess && (_jsxs("div", { className: "flex items-center gap-2 p-3 text-sm text-green-700 rounded-md bg-green-50 border border-green-100", children: [_jsx(CheckCircle2, { className: "w-4 h-4 shrink-0" }), _jsx("p", { children: "Expense added successfully!" })] })), _jsx(Button, { type: "submit", className: "w-full", disabled: isSubmitting, children: isSubmitting ? (_jsxs(_Fragment, { children: [_jsx(Loader2, { className: "w-4 h-4 mr-2 animate-spin" }), "Adding..."] })) : ('Add Expense') })] }) }) })] }));
 }
 //# sourceMappingURL=ExpenseForm.js.map

@@ -25,6 +25,8 @@ This is a modern, full-stack expense tracking application built using a monorepo
 ## Progress Tracking
 - [x] **BATCH 3 — Backend: POST /expenses (Idempotent Create)**: Verified the implementation in `server/src/routes/expenses.ts`. Validations, Idempotency-Key header handling, Category existence checks, and response shapes correctly match the requirements without changing any pre-existing variables.
 - [x] **BATCH 4 — Frontend: Project Setup & API Layer**: Configured Shadcn UI, set up absolute imports, centralized API interactions with exponential backoff logic, added an idempotency hook, and configured global React Query setup.
+- [x] **BATCH 4 — Backend: GET /expenses (Filtered & Sorted)**: Verified the dynamic query builder, server-computed totals using window functions, and relocated the database health check endpoint to the server root for Vercel/AWS compatibility.
 - [x] **BATCH 5 — Frontend: Add Expense Form**: Created a highly robust `ExpenseForm` with Zod validation, precise Shadcn inputs (including dynamic category fetching), explicit submission state handling, inline API error display, and optimistic cache invalidation.
+- [x] **BATCH 6 — Frontend: Expense List, Filters & Total**: Built the read-side UI featuring a responsive Shadcn Table, Indian currency formatting, elegant skeleton loaders, and purely server-side filter state management dynamically driven by React Query.
 
 I am ready to proceed with your instructions.

@@ -20,7 +20,7 @@ app.use('/api/categories', categoriesRouter);
 app.use('/api/expenses', expensesRouter);
 
 // Health check endpoint - verifies database connectivity
-app.get('/api/health', async (req, res) => {
+app.get('/health', async (req, res) => {
   try {
     // Test database connectivity
     await query('SELECT 1');

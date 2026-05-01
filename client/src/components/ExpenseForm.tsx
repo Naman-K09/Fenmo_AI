@@ -18,13 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from './ui/form';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 // Schema mimicking backend validation exactly
@@ -33,7 +27,7 @@ const expenseFormSchema = z.object({
     .string()
     .min(1, 'Amount is required')
     .regex(/^\d+(\.\d{1,2})?$/, 'Must be a positive number with at most 2 decimal places'),
-  categoryId: z.string().uuid('Please select a valid category'),
+  categoryName: z.string().min(1, 'Category is required').max(50, 'Category name is too long'),
   description: z
     .string()
     .min(1, 'Description is required')
@@ -69,7 +63,7 @@ export function ExpenseForm() {
     resolver: zodResolver(expenseFormSchema),
     defaultValues: {
       amount: '',
-      categoryId: '',
+      categoryName: '',
       description: '',
       date: today,
     },
@@ -78,12 +72,46 @@ export function ExpenseForm() {
   const mutation = useMutation({
     mutationFn: async (values: ExpenseFormValues) => {
       setSubmitError(null);
+      
+      let finalCategoryId = '';
+      const normalizedInput = values.categoryName.trim().toLowerCase();
+      const existing = categories.find((c: Category) => c.name.toLowerCase() === normalizedInput);
+      
+      if (existing) {
+        finalCategoryId = existing.id;
+      } else {
+        try {
+          const createRes = await api.post<Category>('/categories', { name: values.categoryName });
+          finalCategoryId = createRes.data.id;
+        } catch (err) {
+          if (err instanceof ClientApiError && err.status === 409) {
+            // It was created just now by someone else, refetch to get the ID
+            const freshCategories = await api.get<Category[]>('/categories');
+            const found = freshCategories.data.find(c => c.name.toLowerCase() === normalizedInput);
+            if (found) {
+              finalCategoryId = found.id;
+            } else {
+              throw new Error("Failed to resolve category ID");
+            }
+          } else {
+            throw err; // Re-throw if it's a different error
+          }
+        }
+      }
+
+      const expensePayload = {
+        amount: values.amount,
+        categoryId: finalCategoryId,
+        description: values.description,
+        date: values.date
+      };
+
       // We pass the idempotency key to the API call
-      return api.post('/expenses', values, { idempotencyKey: getKey() });
+      return api.post('/expenses', expensePayload, { idempotencyKey: getKey() });
     },
     onSuccess: () => {
       resetKey(); // Important: Only reset after success!
-      form.reset({ amount: '', categoryId: '', description: '', date: today });
+      form.reset({ amount: '', categoryName: '', description: '', date: today });
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
       
@@ -150,24 +178,13 @@ export function ExpenseForm() {
 
             <FormField
               control={form.control}
-              name="categoryId"
+              name="categoryName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger disabled={isLoadingCategories}>
-                        <SelectValue placeholder={isLoadingCategories ? "Loading..." : "Select a category"} />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <Input placeholder="e.g. Food, Transport, etc." {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
